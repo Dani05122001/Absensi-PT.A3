@@ -88,6 +88,12 @@
       box-shadow: 0 10px 20px rgba(30,60,114,0.3);
     }
 
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .result {
       margin-top: 20px;
       padding: 16px;
@@ -175,26 +181,64 @@
   </div>
 
   <script>
-    document.getElementById('absenForm').addEventListener('submit', function(e) {
+    document.getElementById('absenForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
+      // Ambil nilai dari form
       const nama = document.getElementById('nama').value;
       const jabatan = document.getElementById('jabatan').value;
       const status = document.getElementById('status').value;
       const waktu = new Date().toLocaleString('id-ID');
+      const tanggal = new Date().toLocaleDateString('id-ID');
 
-      document.getElementById('rNama').textContent = nama;
-      document.getElementById('rJabatan').textContent = jabatan;
-      document.getElementById('rStatus').textContent = status;
-      document.getElementById('rWaktu').textContent = waktu;
+      // Tombol jadi loading
+      const tombol = document.querySelector('button[type="submit"]');
+      tombol.textContent = '⏳ Mengirim...';
+      tombol.disabled = true;
 
-      const result = document.getElementById('result');
-      result.classList.add('show', 'success');
+      // Data yang mau dikirim
+      const dataAbsen = {
+        timestamp: waktu,
+        nama: nama,
+        jabatan: jabatan,
+        status: status,
+        waktu: waktu,
+        keterangan: '-',
+        tanggal: tanggal
+      };
 
-      // Reset form setelah 3 detik
-      setTimeout(() => {
+      try {
+        // Kirim data ke Google Sheets
+        await fetch('https://script.google.com/macros/s/AKfycbwmokz-kTaaPplE0JBWeRd1ju7jJgV47moAepkuOOxz4rOBx5SroEPUdjPxOvQzff5J/exec', {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dataAbsen)
+        });
+
+        // Tampilkan hasil di halaman
+        document.getElementById('rNama').textContent = nama;
+        document.getElementById('rJabatan').textContent = jabatan;
+        document.getElementById('rStatus').textContent = status;
+        document.getElementById('rWaktu').textContent = waktu;
+
+        const result = document.getElementById('result');
+        result.classList.add('show', 'success');
+
+        // Reset form
         this.reset();
-      }, 3000);
+
+        // Kembalikan tombol
+        tombol.textContent = '✅ Kirim Absensi';
+        tombol.disabled = false;
+
+      } catch (error) {
+        alert('Gagal mengirim absensi: ' + error.message);
+        tombol.textContent = '✅ Kirim Absensi';
+        tombol.disabled = false;
+      }
     });
   </script>
 </body>
